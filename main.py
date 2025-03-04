@@ -1,16 +1,37 @@
-# This is a sample Python script.
+import asyncio
+import logging
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from bot import bot
+
+from aiogram import Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
+
+from handlers import (start_handler)
+
+# логгирование в файл
+# logging.basicConfig(
+#      filename='bot.log',  # Укажите путь к файлу логов
+#      level=logging.INFO,  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+#      format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# )
+
+# логгирование для тестирования
+logging.basicConfig(level=logging.INFO)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+# Запуск бота
+async def main():
+    dp = Dispatcher(storage=MemoryStorage())
+
+    dp.include_router(start_handler.router_start)
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    # Запускаем бота и пропускаем все накопленные входящие
+    # Да, этот метод можно вызвать даже если у вас поллинг
+    await bot.delete_webhook(drop_pending_updates=True)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
