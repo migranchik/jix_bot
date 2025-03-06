@@ -1,37 +1,65 @@
 import asyncio
 import logging
+import uvicorn
+
+from aiogram import Dispatcher, types
+from aiogram.fsm.storage.memory import MemoryStorage
+from fastapi import FastAPI, Request
 
 from bot import bot
 
-from aiogram import Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
+from handlers import start_handler, create_model_handler
+from adapters import model_db_adapter
 
-from handlers import (start_handler)
-
-# логгирование в файл
-# logging.basicConfig(
-#      filename='bot.log',  # Укажите путь к файлу логов
-#      level=logging.INFO,  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-#      format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-# )
-
-# логгирование для тестирования
+# Логирование
 logging.basicConfig(level=logging.INFO)
 
+# Создаём FastAPI
+app = FastAPI()
 
-# Запуск бота
-async def main():
-    dp = Dispatcher(storage=MemoryStorage())
+model_db = model_db_adapter.ModelDB()
 
-    dp.include_router(start_handler.router_start)
+# Настраиваем aiogram
+dp = Dispatcher(storage=MemoryStorage())
+dp.include_router(start_handler.router_start)
+dp.include_router(create_model_handler.router_create_model)
 
 
-    # Запускаем бота и пропускаем все накопленные входящие
-    # Да, этот метод можно вызвать даже если у вас поллинг
-    await bot.delete_webhook(drop_pending_updates=True)
+# Webhook для Astria
+@app.post("/astria_callback")
+async def astria_callback(request: Request):
+    """Обработка коллбэков от Astria"""
+    query_params = request.query_params
+    user_id = query_params.get('user_id')
+    model_title = query_params.get('model_title')
 
+    logging.info(f"Astria callback: user_id={user_id}, model_title={model_title}")
+
+    model_db.update_model_tuned_status(model_title)
+
+    await bot.send_message(user_id, "Model is done")
+    return {"status": "received"}
+
+
+async def start_bot():
+    """Запуск бота в режиме polling"""
+    await bot.delete_webhook(drop_pending_updates=True)  # Отключаем вебхук у Telegram
+    logging.info("✅ Бот запущен в режиме polling")
     await dp.start_polling(bot)
 
 
+async def start_fastapi():
+    """Запуск FastAPI"""
+    logging.info("✅ FastAPI запущен на http://0.0.0.0:8000")
+    config = uvicorn.Config(app, host="0.0.0.0", port=8000)
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
+async def main():
+    """Запуск FastAPI и бота одновременно"""
+    await asyncio.gather(start_bot(), start_fastapi())  # Запускаем оба сервиса
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main())  # Запуск приложения
