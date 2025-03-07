@@ -31,7 +31,37 @@ class ModelDB:
 
         cursor.close()
 
+    def get_user_models(self, user_id):
+        self.database_connection.reconnect()
+
+        cursor = self.database_connection.cursor()
+        query = "SELECT * FROM models WHERE user_id = %s AND tuned = 1"
+
+        cursor.execute(query, (user_id,))
+
+        models = cursor.fetchall()
+
+        cursor.close()
+
+        print('User models returned successfully!')
+        return models
+
+    def get_model(self, user_id, model_id):
+        self.database_connection.reconnect()
+
+        cursor = self.database_connection.cursor()
+        query = "SELECT * FROM models WHERE user_id = %s AND model_id = %s"
+
+        cursor.execute(query, (user_id, model_id))
+
+        model = cursor.fetchall()
+
+        cursor.close()
+
+        print('Model returned successfully!')
+        return model[0]
+
 
 if __name__ == '__main__':
     model_db = ModelDB()
-    model_db.update_model_tuned_status("da52ac1c-eeef-4841-890e-6f69a5fd7f0e")
+    model_db.get_model(7047174818, 2204087)

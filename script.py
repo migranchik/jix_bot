@@ -1,8 +1,8 @@
+# THIS FILE FOR ONLY TESTING
+
 from bot import astria_api
 
-files = [('tune[images][]', open("7047174818_0.jpg", 'rb')),
-         ('tune[images][]', open("7047174818_1.jpg", 'rb'))]
-
-response = astria_api.create_model("7047174818", "man", "81252", files)
+response = astria_api.create_prompt(2205398, 123456, 'draw me pls')
+# #response = astria_api.prompt_info(2204087, 22893833)
 
 print(response.json())

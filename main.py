@@ -1,55 +1,90 @@
 import asyncio
 import logging
 import uvicorn
+import json
 
-from aiogram import Dispatcher, types
+from aiogram import Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from fastapi import FastAPI, Request
 
 from bot import bot
 
-from handlers import start_handler, create_model_handler
+from handlers import (start_handler,
+                      create_model_handler,
+                      generate_image_handler)
 from adapters import model_db_adapter
 
-# Логирование
+# logging
 logging.basicConfig(level=logging.INFO)
 
-# Создаём FastAPI
+# Create FastAPI
 app = FastAPI()
 
+# Adapter for models table in DB
 model_db = model_db_adapter.ModelDB()
 
-# Настраиваем aiogram
+# setting up aiogram
 dp = Dispatcher(storage=MemoryStorage())
+
+# include routers from handler files
 dp.include_router(start_handler.router_start)
 dp.include_router(create_model_handler.router_create_model)
+dp.include_router(generate_image_handler.router_generate_image)
 
 
-# Webhook для Astria
-@app.post("/astria_callback")
+# webhook endpoint for fine-tuning model from Astria
+@app.post("/model")
 async def astria_callback(request: Request):
-    """Обработка коллбэков от Astria"""
+    # get query params from callback url
     query_params = request.query_params
     user_id = query_params.get('user_id')
     model_title = query_params.get('model_title')
 
     logging.info(f"Astria callback: user_id={user_id}, model_title={model_title}")
 
+    # change model status `tuned` in models table
     model_db.update_model_tuned_status(model_title)
 
-    await bot.send_message(user_id, "Model is done")
+    # notify user about readiness of his model
+    await bot.send_message(user_id, "Ваша модель готова к работе! Напишите /start и выберите её")
+    return {"status": "received"}
+
+
+# webhook endpoint for prompt from Astria
+@app.post("/prompt")
+async def astria_callback(request: Request):
+    # get query params from callback url
+    query_params = request.query_params
+    user_id = query_params.get('user_id')
+    model_id = query_params.get('model_id')
+
+    logging.info(f"Astria callback: user_id={user_id}, model_id={model_id}")
+
+    # get Prompt object from callback
+    body = await request.body()
+
+    # Decode body in bytes to string body
+    json_str = body.decode("utf-8")
+    json_obj = json.loads(json_str)
+
+    # take the generated image url from callback body
+    image_url = json_obj["prompt"]["images"][0]
+
+    # notify user about readiness his image
+    await bot.send_photo(user_id, photo=image_url, caption='Вот ваша картинка')
+
     return {"status": "received"}
 
 
 async def start_bot():
-    """Запуск бота в режиме polling"""
-    await bot.delete_webhook(drop_pending_updates=True)  # Отключаем вебхук у Telegram
+    # function start bot in polling mode
+    await bot.delete_webhook(drop_pending_updates=True)  # turn off webhook from Telegram
     logging.info("✅ Бот запущен в режиме polling")
     await dp.start_polling(bot)
 
 
 async def start_fastapi():
-    """Запуск FastAPI"""
+    # function start FastAPI for handle callbacks from Astria API
     logging.info("✅ FastAPI запущен на http://0.0.0.0:8000")
     config = uvicorn.Config(app, host="0.0.0.0", port=8000)
     server = uvicorn.Server(config)
@@ -57,9 +92,9 @@ async def start_fastapi():
 
 
 async def main():
-    """Запуск FastAPI и бота одновременно"""
-    await asyncio.gather(start_bot(), start_fastapi())  # Запускаем оба сервиса
+    # start bot and FastAPI
+    await asyncio.gather(start_bot(), start_fastapi())  # start both
 
 
 if __name__ == "__main__":
-    asyncio.run(main())  # Запуск приложения
+    asyncio.run(main())  # run application

@@ -12,59 +12,81 @@ from middlewares.AlbumMiddleware import AlbumMiddleware
 
 import uuid
 
-
+# create router for handling create model
 router_create_model = Router()
+
+# include AlbumMiddleware to create model router
 router_create_model.message.middleware(AlbumMiddleware())
 
+# create db adapter objects
 model_db = model_db_adapter.ModelDB()
 learn_photo_db = learn_photo_db_adapter.LearnPhotoDB()
 
 
-# Handling the click to inline button "Создать модель"
+# handling the click to inline button "Создать модель"
 @router_create_model.callback_query(F.data.startswith('start_creating_model'))
 async def start_model_creating(callback: CallbackQuery, state: FSMContext):
+    # set waiting model name state
     await state.set_state(CreateModelState.waiting_model_name)
 
+    # ask model name
     await callback.message.answer("Введи название своей модели одним английским словом \n\n"
                                   "Примеры: annaSokolova, Anna_Sokolova")
 
+    # turn off loading animation of inline button
     await callback.answer()
 
 
-# Get model name from user
+# get model name from user
 @router_create_model.message(CreateModelState.waiting_model_name)
 async def get_model_name(message: Message, state: FSMContext):
+    # save model name in bot storage
     await state.update_data(model_name=message.text)
 
+    # suggest choosing a gender
     await message.answer("Выберите пол (для улучшения генерации фотографий)",
                          reply_markup=create_model_keyboard.choose_gender_kb)
 
 
+# handling selected `man` gender
 @router_create_model.callback_query(F.data.startswith('chose_man'))
 async def chose_man(callback: CallbackQuery, state: FSMContext):
+    # get gender from inline button callback data
     gender = callback.data.split('_')[2]
 
+    # set waiting upload photos state
     await state.set_state(CreateModelState.waiting_upload_photos)
+    # save user gender in bot storage
     await state.update_data(gender="man")
 
+    # message about selected gender
     await callback.message.answer(f'Вы выбрали пол: <b>{gender}</b>.',
                                   parse_mode="HTML")
+    # ask upload photos
     await callback.message.answer('Выбери и загрузи 10-15 своих фотографий ( тут надо будет инструкцию )')
 
+    # turn off loading animation of inline button
     await callback.answer()
 
 
+# handling selected `woman` gender
 @router_create_model.callback_query(F.data.startswith('chose_woman'))
 async def chose_woman(callback: CallbackQuery, state: FSMContext):
+    # get gender from inline button callback data
     gender = callback.data.split('_')[2]
 
+    # set waiting upload photos state
     await state.set_state(CreateModelState.waiting_upload_photos)
+    # save user gender in bot storage
     await state.update_data(gender="woman")
 
+    # message about selected gender
     await callback.message.answer(f'Вы выбрали пол: <b>{gender}</b>.',
                                   parse_mode="HTML")
-    await callback.message.answer('Выбери и загрузи 10-15 своих фотографий ( тут надо будет инструкцию )')
+    # ask upload photos
+    await callback.message.answer('Выбери и загрузи 5-10 своих фотографий ( тут надо будет инструкцию )')
 
+    # turn off loading animation of inline button
     await callback.answer()
 
 
@@ -120,4 +142,6 @@ async def start_model_learning(callback: CallbackQuery, state: FSMContext):
                           model_title=model_data["title"])
 
     await callback.message.answer("Модель обучается, это займет некоторые время. Мы сообщим вам, когда будет готова к работе")
+
+    # turn off loading animation of inline button
     await callback.answer()

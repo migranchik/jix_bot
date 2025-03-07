@@ -5,14 +5,16 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message
 
 
+# Middleware for handler receive photos album
 class AlbumMiddleware(BaseMiddleware):
 
     def __init__(self, latency: Union[int, float] = 0.1):
 
-        # Init latency and album data dictionary
+        # init latency and album data dictionary
         self.latency = latency
         self.album_data = {}
 
+    # main middleware logic
     async def __call__(
             self,
             handler: Callable[[Message, dict[str, Any]], Awaitable[Any]],
@@ -20,49 +22,44 @@ class AlbumMiddleware(BaseMiddleware):
             data: dict[str, Any]
     ) -> Any:
 
-        """
-
-        Main middleware logic
-        """
-
-        # If event hasn't media group, pass it
+        # if event hasn't media group, pass it
         if not event.media_group_id:
             return await handler(event, data)
 
-        # Collect messages of the same media group
+        # collect messages of the same media group
         total_before = self.collect_album_message(event)
 
-        # Wait for a specified latency time
+        # wait for a specified latency time
         await asyncio.sleep(self.latency)
 
-        # Check the total number of messages after latency
+        # check the total number of messages after latency
         total_after = len(self.album_data[event.media_group_id]["messages"])
 
-        # If new messages were added during the latency. exit
+        # if new messages were added during the latency. exit
         if total_after != total_before:
             return
 
-        # Sort the album messages by message_id and add to data
+        # sort the album messages by message_id and add to data
         album_messages = self.album_data[event.media_group_id]["messages"]
         album_messages.sort(key=lambda x: x.message_id)
         data["album"] = album_messages
 
-        # Call the original handler with custom data["album"]
+        # call the original handler with custom data["album"]
         await handler(event, data)
 
-        # Remove the media group from tracking to free up memory
+        # remove the media group from tracking to free up memory
         del self.album_data[event.media_group_id]
 
     def collect_album_message(self, event: Message):
 
-        # Checking if media group exists in album data
+        # checking if media group exists in album data
         if event.media_group_id not in self.album_data:
 
-            # Create a new entity for the media group
+            # create a new entity for the media group
             self.album_data[event.media_group_id] = {"messages": []}
 
-        # Append the new message to the media group
+        # append the new message to the media group
         self.album_data[event.media_group_id]["messages"].append(event)
 
-        # Return the total number of messages in the current media group
+        # return the total number of messages in the current media group
         return len(self.album_data[event.media_group_id]["messages"])
