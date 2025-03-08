@@ -1,6 +1,7 @@
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
 from adapters import user_db_adapter, model_db_adapter
 
@@ -22,7 +23,10 @@ async def check_bot(message: Message):
 
 # handling new user and create entity in DB
 @router_start.message(Command('start'))
-async def start_bot(message: Message):
+async def start_bot(message: Message, state: FSMContext):
+    # set default photo format
+    await state.update_data(photo_format_id=0)
+
     try:
         # try add user entity in db (users table)
         user_db.create_user(message.from_user.id, message.from_user.username)

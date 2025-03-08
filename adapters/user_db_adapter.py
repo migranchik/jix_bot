@@ -64,6 +64,22 @@ class UserDB:
         except Exception as e:
             print(e)
 
+    def get_user_tokens(self, user_id):
+        try:
+            self.database_connection.reconnect()
+
+            cursor = self.database_connection.cursor()
+            query = "SELECT `tokens` FROM users WHERE user_id = %s"
+
+            cursor.execute(query, (user_id,))
+
+            print('Successfully return tokens by user_id')
+            return cursor.fetchall()[0][0]
+
+        except Exception as e:
+            print(e)
+
 
 if __name__ == '__main__':
     user_db = UserDB()
+    print(user_db.get_user_tokens(7047174818) + 1)

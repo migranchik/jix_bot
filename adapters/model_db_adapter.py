@@ -32,36 +32,44 @@ class ModelDB:
         cursor.close()
 
     def get_user_models(self, user_id):
-        self.database_connection.reconnect()
+        try:
+            self.database_connection.reconnect()
 
-        cursor = self.database_connection.cursor()
-        query = "SELECT * FROM models WHERE user_id = %s AND tuned = 1"
+            cursor = self.database_connection.cursor()
+            query = "SELECT * FROM models WHERE user_id = %s AND tuned = 1"
 
-        cursor.execute(query, (user_id,))
+            cursor.execute(query, (user_id,))
 
-        models = cursor.fetchall()
+            models = cursor.fetchall()
 
-        cursor.close()
+            cursor.close()
 
-        print('User models returned successfully!')
-        return models
+            print('User models returned successfully!')
+            return models
+        except Exception as e:
+            print("Error", e)
+            return []
 
     def get_model(self, user_id, model_id):
-        self.database_connection.reconnect()
+        try:
+            self.database_connection.reconnect()
 
-        cursor = self.database_connection.cursor()
-        query = "SELECT * FROM models WHERE user_id = %s AND model_id = %s"
+            cursor = self.database_connection.cursor()
+            query = "SELECT * FROM models WHERE user_id = %s AND model_id = %s"
 
-        cursor.execute(query, (user_id, model_id))
+            cursor.execute(query, (user_id, model_id))
 
-        model = cursor.fetchall()
+            model = cursor.fetchall()
 
-        cursor.close()
+            cursor.close()
 
-        print('Model returned successfully!')
-        return model[0]
+            print('Model returned successfully!')
+            return model[0]
+        except Exception as e:
+            print("Error", e)
+            return None
 
 
 if __name__ == '__main__':
     model_db = ModelDB()
-    model_db.get_model(7047174818, 2204087)
+    print(model_db.get_user_models(7047174818))

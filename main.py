@@ -11,7 +11,13 @@ from bot import bot
 
 from handlers import (start_handler,
                       create_model_handler,
-                      generate_image_handler)
+                      choose_model_handler,
+                      menu_handler,
+                      profile_handler,
+                      my_models_handler,
+                      buy_token_handler,
+                      choose_photo_format_handler)
+
 from adapters import model_db_adapter
 
 # logging
@@ -27,9 +33,14 @@ model_db = model_db_adapter.ModelDB()
 dp = Dispatcher(storage=MemoryStorage())
 
 # include routers from handler files
+dp.include_router(menu_handler.router_menu)
 dp.include_router(start_handler.router_start)
 dp.include_router(create_model_handler.router_create_model)
-dp.include_router(generate_image_handler.router_generate_image)
+dp.include_router(choose_model_handler.router_choose_model)
+dp.include_router(profile_handler.router_profile)
+dp.include_router(my_models_handler.router_my_models)
+dp.include_router(buy_token_handler.router_buy_token)
+dp.include_router(choose_photo_format_handler.router_choose_photo_format)
 
 
 # webhook endpoint for fine-tuning model from Astria
