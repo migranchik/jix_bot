@@ -16,7 +16,9 @@ from handlers import (start_handler,
                       profile_handler,
                       my_models_handler,
                       buy_token_handler,
-                      choose_photo_format_handler)
+                      choose_style_handler,
+                      choose_photo_format_handler,
+                      style_list_pagination_handler)
 
 from adapters import model_db_adapter
 
@@ -41,6 +43,8 @@ dp.include_router(profile_handler.router_profile)
 dp.include_router(my_models_handler.router_my_models)
 dp.include_router(buy_token_handler.router_buy_token)
 dp.include_router(choose_photo_format_handler.router_choose_photo_format)
+dp.include_router(style_list_pagination_handler.router_style_list_pagination)
+dp.include_router(choose_style_handler.router_choose_style)
 
 
 # webhook endpoint for fine-tuning model from Astria

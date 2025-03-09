@@ -24,7 +24,7 @@ async def open_profile(callback: CallbackQuery, state: FSMContext):
     user_id_formatted = format.format_user_id(str(callback.from_user.id))
     tokens = user_db.get_user_tokens(callback.from_user.id)
 
-    model_id = data.get("model_id")
+    model_id = data.get("model_id", None)
     model_name = ''
     if model_id is None:
         model_name = "модель не выбрана"
@@ -43,5 +43,7 @@ async def open_profile(callback: CallbackQuery, state: FSMContext):
                                      f"✨ Спасибо, что пользуетесь нашим сервисом! 🛠",
                                      reply_markup=general_keyboards.back_to_menu_kb,
                                      parse_mode="HTML")
+
+    await callback.answer()
 
 

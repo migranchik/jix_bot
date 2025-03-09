@@ -6,17 +6,21 @@ class UserDB:
         self.database_connection = mysql.connector.connect(host='localhost', user='root', password='Ilyas2006#', database='jix_bot')
 
     def create_user(self, user_id, username):
-        self.database_connection.reconnect()
+        try:
+            self.database_connection.reconnect()
 
-        cursor = self.database_connection.cursor()
-        query = "INSERT INTO users (user_id, username) VALUES (%s, %s)"
+            cursor = self.database_connection.cursor()
+            query = "INSERT INTO users (user_id, username) VALUES (%s, %s)"
 
-        cursor.execute(query, (user_id, username))
+            cursor.execute(query, (user_id, username))
 
-        self.database_connection.commit()
-        print('User added successfully!')
-
-        cursor.close()
+            self.database_connection.commit()
+            print('User added successfully!')
+        except Exception as e:
+            print("Error", e)
+        finally:
+            self.database_connection.commit()
+            cursor.close()
 
     def get_all(self):
         try:
@@ -30,6 +34,8 @@ class UserDB:
             return cursor.fetchall()
         except Exception as e:
             print("Ошибка при работе с MySQL", e)
+        finally:
+            cursor.close()
 
     def get_username_by_user_id(self, user_id):
         try:
@@ -63,6 +69,8 @@ class UserDB:
 
         except Exception as e:
             print(e)
+        finally:
+            cursor.close()
 
     def get_user_tokens(self, user_id):
         try:
@@ -78,8 +86,26 @@ class UserDB:
 
         except Exception as e:
             print(e)
+        finally:
+            cursor.close()
+
+    def up_user_tokens(self, user_id, new_amount):
+        try:
+            self.database_connection.reconnect()
+
+            cursor = self.database_connection.cursor()
+
+            query = "UPDATE users SET tokens = %s WHERE user_id = %s"
+
+            cursor.execute(query, (new_amount, user_id))
+            self.database_connection.commit()
+
+            print('Successfully upped tokens by user_id')
+        except Exception as e:
+            print(e)
+        finally:
+            cursor.close()
 
 
 if __name__ == '__main__':
     user_db = UserDB()
-    print(user_db.get_user_tokens(7047174818) + 1)

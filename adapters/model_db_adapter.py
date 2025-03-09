@@ -49,6 +49,8 @@ class ModelDB:
         except Exception as e:
             print("Error", e)
             return []
+        finally:
+            cursor.close()
 
     def get_model(self, user_id, model_id):
         try:
@@ -68,6 +70,8 @@ class ModelDB:
         except Exception as e:
             print("Error", e)
             return None
+        finally:
+            cursor.close()
 
 
 if __name__ == '__main__':
